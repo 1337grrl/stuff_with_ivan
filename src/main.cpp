@@ -13,6 +13,12 @@ int main()
 	sf::CircleShape shape(100.f);
 	shape.setFillColor(sf::Color::Green);
 
+	sf::Texture texture;
+	if (!texture.loadFromFile("./content/brick_blue.png"))
+	{
+		std::cout << "Error: unable to load texture";
+	}
+
 	while (window.isOpen())
 	{
 		sf::Event event;
