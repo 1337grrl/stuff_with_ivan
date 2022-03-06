@@ -8,16 +8,16 @@
 
 int main()
 {
-
-	sf::RenderWindow window(sf::VideoMode(640, 480), "SFML works!");
-	sf::CircleShape shape(100.f);
-	shape.setFillColor(sf::Color::Green);
-
+	sf::RenderWindow window(sf::VideoMode(1024, 768), "SFML works!");
+	
 	sf::Texture texture;
-	if (!texture.loadFromFile("./content/brick_blue.png"))
+	if (!texture.loadFromFile("content/brick_blue.png"))
 	{
 		std::cout << "Error: unable to load texture";
 	}
+
+	sf::Sprite sprite = sf::Sprite(texture);
+	sprite.setPosition(sf::Vector2f(80.f, 80.f));
 
 	while (window.isOpen())
 	{
@@ -28,8 +28,12 @@ int main()
 				window.close();
 		}
 
-		window.clear();
-		window.draw(shape);
+		sf::Color clearClr = sf::Color(0, 0, 0, 255);
+		//clearClr = sf::Color(128, 128, 128, 255);
+		window.clear(clearClr);
+		
+		window.draw(sprite);
+
 		window.display();
 	}
 }
