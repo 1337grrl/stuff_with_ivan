@@ -5,9 +5,38 @@
 
 TODO:
 
-1. Create VS proj
-2. add lib (sdl or SFML)
-3. draw sprite
-4. restore prev progress from Go proj
+- [x] Create VS proj
+- [x] add lib (sdl or SFML)
+- [x] draw sprite
+- [x] restore prev progress from Go proj
 
 
+- [ ] Input for pad
+    - [ ] Limit movement to screen bounds
+    - [ ] Move pad by mouse
+    - [ ] Start game with click LMB
+    - [ ] Hide cursor
+- [ ] Ball movement
+    - [ ] Collisions with walls
+    - [ ] Add horizontal velocity
+    - [ ] Small randomness in direction on hit
+    - [ ] Collisions with bricks
+    - [ ] Increase speed on hit
+    - [ ] Non linear collision with pad
+- [ ] Bricks
+    - [ ] Hardcoded level with fixed amount of bricks
+    - [ ] Destroy on hit
+    - [ ] Non destroyable brick
+    - [ ] Brick with hp (more then 1 hit is required to destroy)
+- [ ] Core
+    - [ ] Destroy ball if it falls down 
+    - [ ] Display player live
+    - [ ] Display score
+    - [ ] 3 attempts - game over
+    - [ ] All bricks destroyed - win
+- [ ] Extra
+    - [ ] Sounds
+    - [ ] Explosive brick
+    - [ ] Brick can drop bonus. Additional life, player can collect up to X
+    - [ ] Ball shouldn’t overlap with any other sprites
+    - [ ] Ball should shrink on bounce with pad
