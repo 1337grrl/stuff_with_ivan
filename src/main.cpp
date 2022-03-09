@@ -29,7 +29,7 @@ void ResetGame()
 {
 	ballPosition = sf::Vector2f(WINDOW_WIDTH*.5, 500.f);
 	padPos = sf::Vector2f(WINDOW_WIDTH*.5 - padHalfSize.x, WINDOW_HEIGHT - padSize.y - PADDING);
-	ballDirection = sf::Vector2f(0.05f, 0.05f);
+	ballDirection = sf::Vector2f(0.05f, 0.08f);
 	ballSize = 10.f;
 }
 
@@ -51,6 +51,20 @@ void takeInput(const sf::RenderWindow& window)
 
 inline sf::Vector2f accelerate(sf::Vector2f& direction) {
 	return direction * 1.05f;
+}
+
+sf::Text gameOverMsg(const sf::Font& font) {
+	sf::Text gameOverMsg;
+
+	std::string msg = "GAME OVER!";
+	gameOverMsg.setFont(font); // font is a sf::Font
+	gameOverMsg.setString(msg.c_str());
+	gameOverMsg.setCharacterSize(120); // in pixels, not points!
+	gameOverMsg.setFillColor(sf::Color::Red);
+	gameOverMsg.setStyle(sf::Text::Bold);
+	gameOverMsg.setPosition(sf::Vector2f(0.f, WINDOW_HEIGHT*.4));
+
+	return gameOverMsg;
 }
 
 void moveBall() {
@@ -108,7 +122,13 @@ int main()
 	
 
 	sf::Font font;
-	if (!font.loadFromFile("content/font.ttf"))
+	if (!font.loadFromFile("content/font_debug.ttf"))
+	{
+		// error...
+	}
+
+	sf::Font gameOverFont;
+	if (!gameOverFont.loadFromFile("content/font_game_over.ttf"))
 	{
 		// error...
 	}
@@ -127,20 +147,26 @@ int main()
 		takeInput(window);
 		moveBall();
 
-
 		// --- Render ---
 		sf::Color clearClr = sf::Color(0, 0, 0, 255);
 		//clearClr = sf::Color(128, 128, 128, 255);
 		window.clear(clearClr);
 		
-		for (int i = 0; i < count; ++i)
-		{
-			window.draw(sprites[i]);
+		
+		if (ballPosition.y >= WINDOW_HEIGHT) {
+			window.draw(gameOverMsg(gameOverFont));
 		}
+		else {
+			window.draw(ball);
 
-		window.draw(pad);
-		window.draw(ball);
+			for (int i = 0; i < count; ++i)
+			{
+				window.draw(sprites[i]);
+			}
 
+			window.draw(pad);
+
+		}
 
 		// --- Debug ---
 

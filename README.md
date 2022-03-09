@@ -34,6 +34,7 @@ TODO:
     - [ ] Display score
     - [ ] 3 attempts - game over
     - [ ] All bricks destroyed - win
+	- [x] Display Game Over message
 - [ ] Extra
     - [ ] Sounds
     - [ ] Explosive brick
