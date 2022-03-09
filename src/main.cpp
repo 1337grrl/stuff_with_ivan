@@ -19,7 +19,7 @@ const sf::Vector2f padHalfSize = padSize * 0.5f;
 
 
 sf::Vector2f ballPosition;
-float ballSpeed;
+sf::Vector2f ballDirection;
 float ballSize;
 
 sf::RectangleShape pad;
@@ -29,11 +29,11 @@ void ResetGame()
 {
 	ballPosition = sf::Vector2f(WINDOW_WIDTH*.5, 500.f);
 	padPos = sf::Vector2f(WINDOW_WIDTH*.5 - padHalfSize.x, WINDOW_HEIGHT - padSize.y - PADDING);
-	ballSpeed = 0.05f;
+	ballDirection = sf::Vector2f(0.05f, 0.05f);
 	ballSize = 10.f;
 }
 
-void Input(const sf::RenderWindow& window)
+void takeInput(const sf::RenderWindow& window)
 {
 	mousePosX = sf::Mouse::getPosition(window).x;
 
@@ -47,6 +47,26 @@ void Input(const sf::RenderWindow& window)
 	{
 		ResetGame();
 	}
+}
+
+
+void moveBall() {
+	
+	if (ballPosition.y + ballSize >= (padPos.y - ballSize))
+	{
+		if ((ballPosition.x <= (padPos.x + padSize.x)) && (ballPosition.x >= (padPos.x)))
+		{
+			ballDirection.y = -ballDirection.y;
+		}
+	}
+	if (ballPosition.y <= 0) {
+		ballDirection.y = -ballDirection.y;
+	}
+	if (ballPosition.x <= 0 || ballPosition.x >= WINDOW_WIDTH - ballSize) {
+		ballDirection.x = -ballDirection.x;
+	}
+	ballPosition += ballDirection;
+	ball.setPosition(ballPosition);
 }
 
 int main()
@@ -98,18 +118,8 @@ int main()
 
 		// --- Update ---
 
-		ballPosition.y += ballSpeed;
-		ball.setPosition(ballPosition);
-
-		if(ballPosition.y + ballSize >= (padPos.y - ballSize))
-		{
-			if ((ballPosition.x <= (padPos.x + padSize.x)) && (ballPosition.x >= (padPos.x)))
-			{
-				ballSpeed = -ballSpeed;
-			}
-		}
-
-		Input(window);
+		takeInput(window);
+		moveBall();
 
 
 		// --- Render ---

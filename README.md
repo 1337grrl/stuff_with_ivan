@@ -17,8 +17,8 @@ TODO:
     - [ ] Start game with click LMB
     - [ ] Hide cursor
 - [ ] Ball movement
-    - [ ] Collisions with walls
-    - [ ] Add horizontal velocity
+    - [x] Collisions with walls
+    - [x] Add horizontal velocity
     - [ ] Small randomness in direction on hit
     - [ ] Collisions with bricks
     - [ ] Increase speed on hit
