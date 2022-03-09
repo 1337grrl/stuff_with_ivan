@@ -12,7 +12,7 @@ TODO:
 
 
 - [ ] Input for pad
-    - [ ] Limit movement to screen bounds
+    - [x] Limit movement to screen bounds
     - [ ] Move pad by mouse
     - [ ] Start game with click LMB
     - [ ] Hide cursor

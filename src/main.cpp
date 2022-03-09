@@ -9,6 +9,9 @@ const float WINDOW_HEIGHT = 768.;
 const float PADDING = 15.;
 
 
+int mousePosX;
+
+
 sf::Vector2f padPos;
 float padSpeed = 0.1f;
 const sf::Vector2f padSize = sf::Vector2f(120.f, 10.f);
@@ -30,16 +33,14 @@ void ResetGame()
 	ballSize = 10.f;
 }
 
-void Input()
+void Input(const sf::RenderWindow& window)
 {
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left) && padPos.x > PADDING)
-	{
-		padPos.x -= padSpeed;
+	mousePosX = sf::Mouse::getPosition(window).x;
+
+	if (mousePosX > PADDING && mousePosX < (WINDOW_WIDTH - padSize.x - PADDING)) {
+		padPos.x = mousePosX - padHalfSize.x;
 	}
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right) && padPos.x < (WINDOW_WIDTH - padSize.x - PADDING))
-	{
-		padPos.x += padSpeed;
-	}
+
 	pad.setPosition(padPos);
 
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))
@@ -100,7 +101,7 @@ int main()
 		ballPosition.y += ballSpeed;
 		ball.setPosition(ballPosition);
 
-		if(ballPosition.y >= (padPos.y - ballSize))
+		if(ballPosition.y + ballSize >= (padPos.y - ballSize))
 		{
 			if ((ballPosition.x <= (padPos.x + padSize.x)) && (ballPosition.x >= (padPos.x)))
 			{
@@ -108,7 +109,7 @@ int main()
 			}
 		}
 
-		Input();
+		Input(window);
 
 
 		// --- Render ---
