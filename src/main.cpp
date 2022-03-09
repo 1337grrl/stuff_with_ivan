@@ -37,7 +37,7 @@ void takeInput(const sf::RenderWindow& window)
 {
 	mousePosX = sf::Mouse::getPosition(window).x;
 
-	if (mousePosX > PADDING && mousePosX < (WINDOW_WIDTH - padSize.x - PADDING)) {
+	if (mousePosX > PADDING + padHalfSize.x && mousePosX < (WINDOW_WIDTH - padHalfSize.x - PADDING)) {
 		padPos.x = mousePosX - padHalfSize.x;
 	}
 
@@ -49,6 +49,9 @@ void takeInput(const sf::RenderWindow& window)
 	}
 }
 
+inline sf::Vector2f accelerate(sf::Vector2f& direction) {
+	return direction * 1.05f;
+}
 
 void moveBall() {
 	
@@ -56,13 +59,16 @@ void moveBall() {
 	{
 		if ((ballPosition.x <= (padPos.x + padSize.x)) && (ballPosition.x >= (padPos.x)))
 		{
+			ballDirection = accelerate(ballDirection);
 			ballDirection.y = -ballDirection.y;
 		}
 	}
 	if (ballPosition.y <= 0) {
+		ballDirection = accelerate(ballDirection);
 		ballDirection.y = -ballDirection.y;
 	}
 	if (ballPosition.x <= 0 || ballPosition.x >= WINDOW_WIDTH - ballSize) {
+		ballDirection = accelerate(ballDirection);
 		ballDirection.x = -ballDirection.x;
 	}
 	ballPosition += ballDirection;
@@ -146,6 +152,9 @@ int main()
 		debugText += "\n";
 		debugText +="Pad pos: ";
 		debugText += std::to_string(padPos.x);
+		debugText += "\n";
+		debugText += "Ball speed: ";
+		debugText += std::to_string(abs(ballDirection.x));
 
 		text.setFont(font); // font is a sf::Font
 		text.setString(debugText.c_str());

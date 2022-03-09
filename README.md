@@ -21,7 +21,7 @@ TODO:
     - [x] Add horizontal velocity
     - [ ] Small randomness in direction on hit
     - [ ] Collisions with bricks
-    - [ ] Increase speed on hit
+    - [x] Increase speed on hit
     - [ ] Non linear collision with pad
 - [ ] Bricks
     - [ ] Hardcoded level with fixed amount of bricks
