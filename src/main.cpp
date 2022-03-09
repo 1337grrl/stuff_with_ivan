@@ -4,6 +4,10 @@
 
 #include <SFML/Graphics.hpp>
 
+const float WINDOW_WIDTH = 1024.;
+const float WINDOW_HEIGHT = 768.;
+const float PADDING = 15.;
+
 
 sf::Vector2f padPos;
 float padSpeed = 0.1f;
@@ -20,19 +24,19 @@ sf::CircleShape ball;
 
 void ResetGame()
 {
-	ballPosition = sf::Vector2f(512.f, 500.f);
-	padPos = sf::Vector2f(512.f, 750.f);
+	ballPosition = sf::Vector2f(WINDOW_WIDTH*.5, 500.f);
+	padPos = sf::Vector2f(WINDOW_WIDTH*.5 - padHalfSize.x, WINDOW_HEIGHT - padSize.y - PADDING);
 	ballSpeed = 0.05f;
 	ballSize = 10.f;
 }
 
 void Input()
 {
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left) && padPos.x > PADDING)
 	{
 		padPos.x -= padSpeed;
 	}
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right) && padPos.x < (WINDOW_WIDTH - padSize.x - PADDING))
 	{
 		padPos.x += padSpeed;
 	}
@@ -48,7 +52,7 @@ int main()
 {
 	ResetGame();
 
-	sf::RenderWindow window(sf::VideoMode(1024, 768), "SFML works!");
+	sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "SFML works!");
 	
 	sf::Texture brickTexture;
 	if (!brickTexture.loadFromFile("content/brick_blue.png"))
