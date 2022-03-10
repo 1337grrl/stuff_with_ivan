@@ -20,18 +20,18 @@ TODO:
     - [x] Collisions with walls
     - [x] Add horizontal velocity
     - [ ] Small randomness in direction on hit
-    - [ ] Collisions with bricks
+    - [x] Collisions with bricks
     - [x] Increase speed on hit
     - [ ] Non linear collision with pad
 - [ ] Bricks
     - [x] Hardcoded level with fixed amount of bricks
-    - [ ] Destroy on hit
+    - [x] Destroy on hit
     - [ ] Non destroyable brick
     - [ ] Brick with hp (more then 1 hit is required to destroy)
 - [ ] Core
     - [ ] Destroy ball if it falls down 
     - [x] Display player live
-    - [ ] Display score
+    - [x] Display score
     - [x] 3 attempts - game over
     - [ ] All bricks destroyed - win
 	- [x] Display Game Over message

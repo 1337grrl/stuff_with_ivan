@@ -14,7 +14,8 @@ GameState gameState;
 
 int mousePosX;
 
-int playerLives = 3;
+int playerLives;
+int points;
 
 sf::Vector2f padPos;
 float padSpeed = 0.1f;
@@ -31,21 +32,10 @@ sf::CircleShape ball;
 
 const int LEVEL_WIDTH = 11;
 const int LEVEL_HEIGHT = 5;
+sf::Sprite* level;
+sf::Vector2f brickSize = sf::Vector2f((WINDOW_WIDTH / LEVEL_WIDTH), 30.f);
+sf::Texture brickTexture;
 
-
-void ResetGame()
-{
-	ballPosition = sf::Vector2f(WINDOW_WIDTH*.5f, 500.f);
-	ball.setPosition(ballPosition);
-	padPos = sf::Vector2f(WINDOW_WIDTH*.5f - padHalfSize.x, WINDOW_HEIGHT - padSize.y - PADDING);
-	pad.setPosition(padPos);
-	ballDirection = sf::Vector2f(0.05f, 0.08f);
-	ballSize = 10.f;
-	if (gameState != GameState::gameRunning) {
-		playerLives = 3;
-	}
-	gameState = GameState::beforeStart;
-}
 
 sf::Sprite* buildLevel(const sf::Texture& brickTexture) {
 
@@ -65,6 +55,21 @@ sf::Sprite* buildLevel(const sf::Texture& brickTexture) {
 	return sprites;
 }
 
+void ResetGame()
+{
+	ballPosition = sf::Vector2f(WINDOW_WIDTH*.5f, 500.f);
+	ball.setPosition(ballPosition);
+	padPos = sf::Vector2f(WINDOW_WIDTH*.5f - padHalfSize.x, WINDOW_HEIGHT - padSize.y - PADDING);
+	pad.setPosition(padPos);
+	ballDirection = sf::Vector2f(0.05f, 0.08f);
+	ballSize = 10.f;
+	if (gameState != GameState::gameRunning) {
+		playerLives = 3;
+		points = 0;
+	}
+	gameState = GameState::beforeStart;
+}
+
 void takeInput(const sf::RenderWindow& window)
 {
 	mousePosX = sf::Mouse::getPosition(window).x;
@@ -82,9 +87,6 @@ void takeInput(const sf::RenderWindow& window)
 	}
 }
 
-inline sf::Vector2f accelerate(sf::Vector2f& direction) {
-	return direction * 1.025f;
-}
 
 sf::Text inGameMsg(std::string msg, const sf::Font& font) {
 	sf::Text inGameMsg;
@@ -100,33 +102,62 @@ sf::Text inGameMsg(std::string msg, const sf::Font& font) {
 	return inGameMsg;
 }
 
-void moveBall() {
+inline sf::Vector2f accelerate(sf::Vector2f& direction) {
+	return direction * 1.05f;
+}
+
+bool collisionDetected(sf::Sprite& brick) {
+	if (brick.getColor() == sf::Color(0, 0, 0, 0)) {
+		return false;
+	}
+	if (ballPosition.x >= brick.getPosition().x && ballPosition.x + ballSize <= brick.getPosition().x + brickSize.x) {
+		if (ballPosition.y + ballSize >= brick.getPosition().y && ballPosition.y <= brick.getPosition().y + brickSize.y) {
+			brick.setColor(sf::Color(0, 0, 0, 0));
+			ballDirection.y = -ballDirection.y;
+			ballDirection = accelerate(ballDirection);
+			return true;
+		}
+		return false;
+	}
+	return false;
+}
+
+void moveBall(sf::Sprite bricks[]) {
 	
 	if (ballPosition.y + ballSize >= (padPos.y - ballSize))
 	{
 		if ((ballPosition.x <= (padPos.x + padSize.x)) && (ballPosition.x >= (padPos.x)))
 		{
-			ballDirection = accelerate(ballDirection);
 			ballDirection.y = -ballDirection.y;
+			ballDirection = accelerate(ballDirection);
 		}
 	}
 	if (ballPosition.y <= 0) {
-		ballDirection = accelerate(ballDirection);
 		ballDirection.y = -ballDirection.y;
+		ballDirection = accelerate(ballDirection);
 	}
 	if (ballPosition.x <= 0 || ballPosition.x >= WINDOW_WIDTH - ballSize) {
-		ballDirection = accelerate(ballDirection);
 		ballDirection.x = -ballDirection.x;
+		ballDirection = accelerate(ballDirection);
 	}
 	ballPosition += ballDirection;
 	ball.setPosition(ballPosition);
+
+	for (int i = 0; i < LEVEL_HEIGHT * LEVEL_WIDTH; ++i) {
+		if (collisionDetected(bricks[i])) {
+			points += 50;
+		}
+	}
 }
+
 
 sf::Text displayLives(const sf::Font& font) {
 	sf::Text lives;
 
 	std::string msg = "LIVES: ";
 	msg += std::to_string(playerLives);
+	msg += "\nPOINTS: ";
+	msg += std::to_string(points);
 	lives.setFont(font); // font is a sf::Font
 	lives.setString(msg.c_str());
 	lives.setCharacterSize(20); // in pixels, not points!
@@ -136,33 +167,38 @@ sf::Text displayLives(const sf::Font& font) {
 	return lives;
 }
 
+
 int main()
 {
+	sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "###ARCANOID###");
+	window.setMouseCursorVisible(false);
+
+	static sf::Texture brickTexture;
+	if (!brickTexture.loadFromFile("content/brick_blue.png"))
+	{
+		std::cout << "Error: unable to load texture";
+	}
+	level = buildLevel(brickTexture);
+	
+		
 	static sf::Font inGameFont;
 	if (!inGameFont.loadFromFile("content/font_ingame.ttf"))
 	{
 		// error...
 	}
-
 	sf::Text startMsg = inGameMsg("START GAME\nWITH CLICK!", inGameFont);
-	
+
+
 	sf::Music music;
 	if (!music.openFromFile("content/music.wav"))
 		return -1; // error
 	music.play();
-	
+
+
+	sf::Color clearClr = sf::Color(0, 0, 0, 255);
+
+
 	ResetGame();
-
-	sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "###ARCANOID###");
-	window.setMouseCursorVisible(false);
-
-	sf::Texture brickTexture;
-	if (!brickTexture.loadFromFile("content/brick_blue.png"))
-	{
-		std::cout << "Error: unable to load texture";
-	}
-
-	sf::Sprite* level = buildLevel(brickTexture);
 
 	pad = sf::RectangleShape(padSize);
 	pad.setFillColor(sf::Color::Green);
@@ -192,7 +228,7 @@ int main()
 		takeInput(window);
 
 		if (gameState == GameState::gameRunning) {
-			moveBall(); 
+			moveBall(level); 
 			if (ballPosition.y >= WINDOW_HEIGHT) {
 				playerLives--;
 				ResetGame();
@@ -202,9 +238,7 @@ int main()
 			}
 		}
 
-
 		// --- Render ---
-		sf::Color clearClr = sf::Color(0, 0, 0, 255);
 		
 		window.clear(clearClr);			
 		window.draw(ball);
