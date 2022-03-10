@@ -8,9 +8,12 @@ const float WINDOW_WIDTH = 1024.;
 const float WINDOW_HEIGHT = 768.;
 const float PADDING = 15.;
 
+enum class GameState { beforeStart, gameRunning, gameLost, gameWon };
+GameState gameState;
 
 int mousePosX;
 
+int playerLives;
 
 sf::Vector2f padPos;
 float padSpeed = 0.1f;
@@ -25,12 +28,17 @@ float ballSize;
 sf::RectangleShape pad;
 sf::CircleShape ball;
 
+
 void ResetGame()
 {
-	ballPosition = sf::Vector2f(WINDOW_WIDTH*.5, 500.f);
-	padPos = sf::Vector2f(WINDOW_WIDTH*.5 - padHalfSize.x, WINDOW_HEIGHT - padSize.y - PADDING);
+	ballPosition = sf::Vector2f(WINDOW_WIDTH*.5f, 500.f);
+	ball.setPosition(ballPosition);
+	padPos = sf::Vector2f(WINDOW_WIDTH*.5f - padHalfSize.x, WINDOW_HEIGHT - padSize.y - PADDING);
+	pad.setPosition(padPos);
 	ballDirection = sf::Vector2f(0.05f, 0.08f);
 	ballSize = 10.f;
+	playerLives = 3;
+	gameState = GameState::beforeStart;
 }
 
 void takeInput(const sf::RenderWindow& window)
@@ -50,7 +58,21 @@ void takeInput(const sf::RenderWindow& window)
 }
 
 inline sf::Vector2f accelerate(sf::Vector2f& direction) {
-	return direction * 1.05f;
+	return direction * 1.025f;
+}
+
+sf::Text startGameMsg(const sf::Font& font) {
+	sf::Text startGameMsg;
+
+	std::string msg = "START GAME\nCLICK ANYWHERE";
+	startGameMsg.setFont(font); // font is a sf::Font
+	startGameMsg.setString(msg.c_str());
+	startGameMsg.setCharacterSize(120); // in pixels, not points!
+	startGameMsg.setFillColor(sf::Color::Red);
+	startGameMsg.setStyle(sf::Text::Bold);
+	startGameMsg.setPosition(sf::Vector2f(0.f, WINDOW_HEIGHT * .4));
+
+	return startGameMsg;
 }
 
 sf::Text gameOverMsg(const sf::Font& font) {
@@ -62,7 +84,7 @@ sf::Text gameOverMsg(const sf::Font& font) {
 	gameOverMsg.setCharacterSize(120); // in pixels, not points!
 	gameOverMsg.setFillColor(sf::Color::Red);
 	gameOverMsg.setStyle(sf::Text::Bold);
-	gameOverMsg.setPosition(sf::Vector2f(0.f, WINDOW_HEIGHT*.4));
+	gameOverMsg.setPosition(sf::Vector2f(0.f, WINDOW_HEIGHT*.4f));
 
 	return gameOverMsg;
 }
@@ -89,11 +111,35 @@ void moveBall() {
 	ball.setPosition(ballPosition);
 }
 
+sf::Text displayLives(const sf::Font& font) {
+	sf::Text lives;
+
+	std::string msg = std::to_string(playerLives);
+	lives.setFont(font); // font is a sf::Font
+	lives.setString(msg.c_str());
+	lives.setCharacterSize(20); // in pixels, not points!
+	lives.setFillColor(sf::Color::Red);
+	lives.setStyle(sf::Text::Bold);
+
+	return lives;
+}
+
+
 int main()
 {
+	
+	static sf::Font inGameFont;
+	if (!inGameFont.loadFromFile("content/font_ingame.ttf"))
+	{
+		// error...
+	}	
+
+	sf::Text startMsg = startGameMsg(inGameFont);
+
+	
 	ResetGame();
 
-	sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "SFML works!");
+	sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "###ARCANOID###");
 	
 	sf::Texture brickTexture;
 	if (!brickTexture.loadFromFile("content/brick_blue.png"))
@@ -114,24 +160,12 @@ int main()
 
 	pad = sf::RectangleShape(padSize);
 	pad.setFillColor(sf::Color::Green);
-	//pad.setOrigin(sf::Vector2f(0.5f, 0.f));
+	pad.setPosition(padPos);
 
 	ball = sf::CircleShape(ballSize);
 	ball.setFillColor(sf::Color::Magenta);
-	//ball.setOrigin(sf::Vector2f(0.5f, 0.f));
-	
+	ball.setPosition(ballPosition);
 
-	sf::Font font;
-	if (!font.loadFromFile("content/font_debug.ttf"))
-	{
-		// error...
-	}
-
-	sf::Font gameOverFont;
-	if (!gameOverFont.loadFromFile("content/font_game_over.ttf"))
-	{
-		// error...
-	}
 
 	while (window.isOpen())
 	{
@@ -143,33 +177,48 @@ int main()
 		}
 
 		// --- Update ---
+		if (gameState == GameState::beforeStart) {
+			if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) {
+				gameState = GameState::gameRunning;
+			}
+		}
+		if (gameState == GameState::gameRunning) {
+			takeInput(window);
+			moveBall(); 
+			if (ballPosition.y >= WINDOW_HEIGHT) {
+				playerLives--;
+				if (playerLives <= 0) {
+					gameState = GameState::gameLost;
+				}
+			}
+		}
 
-		takeInput(window);
-		moveBall();
 
 		// --- Render ---
 		sf::Color clearClr = sf::Color(0, 0, 0, 255);
-		//clearClr = sf::Color(128, 128, 128, 255);
-		window.clear(clearClr);
 		
 		
-		if (ballPosition.y >= WINDOW_HEIGHT) {
-			window.draw(gameOverMsg(gameOverFont));
-		}
-		else {
-			window.draw(ball);
+		window.clear(clearClr);			
+		window.draw(ball);
 
-			for (int i = 0; i < count; ++i)
-			{
-				window.draw(sprites[i]);
-			}
-
-			window.draw(pad);
-
+		for (int i = 0; i < count; ++i)
+		{
+			window.draw(sprites[i]);
 		}
 
-		// --- Debug ---
+		window.draw(pad);
+		window.draw(displayLives(inGameFont));
 
+		if (gameState == GameState::beforeStart) {
+			window.draw(startMsg);
+		}
+
+		/* --- Debug ---
+		sf::Font font;
+		if (!font.loadFromFile("content/font_debug.ttf"))
+		{
+			// error...
+		}
 		sf::Text text;
 
 		std::string debugText;
@@ -189,7 +238,7 @@ int main()
 		text.setStyle(sf::Text::Bold | sf::Text::Underlined);
 		window.draw(text);
 
-
+		*/
 
 
 		window.display();

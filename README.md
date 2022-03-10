@@ -14,7 +14,7 @@ TODO:
 - [ ] Input for pad
     - [x] Limit movement to screen bounds
     - [x] Move pad by mouse
-    - [ ] Start game with click LMB
+    - [x] Start game with click LMB
     - [ ] Hide cursor
 - [ ] Ball movement
     - [x] Collisions with walls
@@ -30,7 +30,7 @@ TODO:
     - [ ] Brick with hp (more then 1 hit is required to destroy)
 - [ ] Core
     - [ ] Destroy ball if it falls down 
-    - [ ] Display player live
+    - [x] Display player live
     - [ ] Display score
     - [ ] 3 attempts - game over
     - [ ] All bricks destroyed - win
