@@ -11,11 +11,11 @@ TODO:
 - [x] restore prev progress from Go proj
 
 
-- [ ] Input for pad
+- [x] Input for pad
     - [x] Limit movement to screen bounds
     - [x] Move pad by mouse
     - [x] Start game with click LMB
-    - [ ] Hide cursor
+    - [x] Hide cursor
 - [ ] Ball movement
     - [x] Collisions with walls
     - [x] Add horizontal velocity
@@ -32,7 +32,7 @@ TODO:
     - [ ] Destroy ball if it falls down 
     - [x] Display player live
     - [ ] Display score
-    - [ ] 3 attempts - game over
+    - [x] 3 attempts - game over
     - [ ] All bricks destroyed - win
 	- [x] Display Game Over message
 - [ ] Extra

@@ -3,6 +3,7 @@
 
 
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio/Music.hpp>
 
 const float WINDOW_WIDTH = 1024.;
 const float WINDOW_HEIGHT = 768.;
@@ -70,6 +71,7 @@ void takeInput(const sf::RenderWindow& window)
 
 	if (mousePosX > PADDING + padHalfSize.x && mousePosX < (WINDOW_WIDTH - padHalfSize.x - PADDING)) {
 		padPos.x = mousePosX - padHalfSize.x;
+		
 	}
 
 	pad.setPosition(padPos);
@@ -143,10 +145,16 @@ int main()
 	}
 
 	sf::Text startMsg = inGameMsg("START GAME\nWITH CLICK!", inGameFont);
-
+	
+	sf::Music music;
+	if (!music.openFromFile("content/music.wav"))
+		return -1; // error
+	music.play();
+	
 	ResetGame();
 
 	sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "###ARCANOID###");
+	window.setMouseCursorVisible(false);
 
 	sf::Texture brickTexture;
 	if (!brickTexture.loadFromFile("content/brick_blue.png"))
