@@ -13,7 +13,7 @@ GameState gameState;
 
 int mousePosX;
 
-int playerLives;
+int playerLives = 3;
 
 sf::Vector2f padPos;
 float padSpeed = 0.1f;
@@ -37,7 +37,9 @@ void ResetGame()
 	pad.setPosition(padPos);
 	ballDirection = sf::Vector2f(0.05f, 0.08f);
 	ballSize = 10.f;
-	playerLives = 3;
+	if (gameState != GameState::gameRunning) {
+		playerLives = 3;
+	}
 	gameState = GameState::beforeStart;
 }
 
@@ -61,32 +63,18 @@ inline sf::Vector2f accelerate(sf::Vector2f& direction) {
 	return direction * 1.025f;
 }
 
-sf::Text startGameMsg(const sf::Font& font) {
-	sf::Text startGameMsg;
+sf::Text inGameMsg(std::string msg, const sf::Font& font) {
+	sf::Text inGameMsg;
 
-	std::string msg = "START GAME\nCLICK ANYWHERE";
-	startGameMsg.setFont(font); // font is a sf::Font
-	startGameMsg.setString(msg.c_str());
-	startGameMsg.setCharacterSize(120); // in pixels, not points!
-	startGameMsg.setFillColor(sf::Color::Red);
-	startGameMsg.setStyle(sf::Text::Bold);
-	startGameMsg.setPosition(sf::Vector2f(0.f, WINDOW_HEIGHT * .4));
+	std::string message = msg;
+	inGameMsg.setFont(font); // font is a sf::Font
+	inGameMsg.setString(msg.c_str());
+	inGameMsg.setCharacterSize(120); // in pixels, not points!
+	inGameMsg.setFillColor(sf::Color::Red);
+	inGameMsg.setStyle(sf::Text::Bold);
+	inGameMsg.setPosition(sf::Vector2f(0.f, WINDOW_HEIGHT*.4f));
 
-	return startGameMsg;
-}
-
-sf::Text gameOverMsg(const sf::Font& font) {
-	sf::Text gameOverMsg;
-
-	std::string msg = "GAME OVER!";
-	gameOverMsg.setFont(font); // font is a sf::Font
-	gameOverMsg.setString(msg.c_str());
-	gameOverMsg.setCharacterSize(120); // in pixels, not points!
-	gameOverMsg.setFillColor(sf::Color::Red);
-	gameOverMsg.setStyle(sf::Text::Bold);
-	gameOverMsg.setPosition(sf::Vector2f(0.f, WINDOW_HEIGHT*.4f));
-
-	return gameOverMsg;
+	return inGameMsg;
 }
 
 void moveBall() {
@@ -114,7 +102,8 @@ void moveBall() {
 sf::Text displayLives(const sf::Font& font) {
 	sf::Text lives;
 
-	std::string msg = std::to_string(playerLives);
+	std::string msg = "LIVES: ";
+	msg += std::to_string(playerLives);
 	lives.setFont(font); // font is a sf::Font
 	lives.setString(msg.c_str());
 	lives.setCharacterSize(20); // in pixels, not points!
@@ -127,15 +116,13 @@ sf::Text displayLives(const sf::Font& font) {
 
 int main()
 {
-	
 	static sf::Font inGameFont;
 	if (!inGameFont.loadFromFile("content/font_ingame.ttf"))
 	{
 		// error...
 	}	
 
-	sf::Text startMsg = startGameMsg(inGameFont);
-
+	sf::Text startMsg = inGameMsg("START GAME\nWITH CLICK!", inGameFont);
 	
 	ResetGame();
 
@@ -181,12 +168,15 @@ int main()
 			if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) {
 				gameState = GameState::gameRunning;
 			}
-		}
+		}			
+		
+		takeInput(window);
+
 		if (gameState == GameState::gameRunning) {
-			takeInput(window);
 			moveBall(); 
 			if (ballPosition.y >= WINDOW_HEIGHT) {
 				playerLives--;
+				ResetGame();
 				if (playerLives <= 0) {
 					gameState = GameState::gameLost;
 				}
@@ -196,7 +186,6 @@ int main()
 
 		// --- Render ---
 		sf::Color clearClr = sf::Color(0, 0, 0, 255);
-		
 		
 		window.clear(clearClr);			
 		window.draw(ball);
@@ -211,6 +200,10 @@ int main()
 
 		if (gameState == GameState::beforeStart) {
 			window.draw(startMsg);
+		} else if (gameState == GameState::gameLost) {
+			window.draw(inGameMsg("GAME OVER!\nReset with Esc", inGameFont));
+		} else if (gameState == GameState::gameWon) {
+			window.draw(inGameMsg("YOU WON!", inGameFont));
 		}
 
 		/* --- Debug ---
