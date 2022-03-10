@@ -24,7 +24,7 @@ TODO:
     - [x] Increase speed on hit
     - [ ] Non linear collision with pad
 - [ ] Bricks
-    - [ ] Hardcoded level with fixed amount of bricks
+    - [x] Hardcoded level with fixed amount of bricks
     - [ ] Destroy on hit
     - [ ] Non destroyable brick
     - [ ] Brick with hp (more then 1 hit is required to destroy)

@@ -28,6 +28,9 @@ float ballSize;
 sf::RectangleShape pad;
 sf::CircleShape ball;
 
+const int LEVEL_WIDTH = 11;
+const int LEVEL_HEIGHT = 5;
+
 
 void ResetGame()
 {
@@ -41,6 +44,24 @@ void ResetGame()
 		playerLives = 3;
 	}
 	gameState = GameState::beforeStart;
+}
+
+sf::Sprite* buildLevel(const sf::Texture& brickTexture) {
+
+	sf::Sprite* sprites = new sf::Sprite[LEVEL_HEIGHT*LEVEL_WIDTH];
+	sf::Vector2f brickSize = sf::Vector2f((WINDOW_WIDTH / LEVEL_WIDTH), 30.f);
+
+	for (int i = 0; i < LEVEL_WIDTH; ++i) {
+		for (int j = 0; j < LEVEL_HEIGHT; ++j)
+		{
+			int index = (i*LEVEL_HEIGHT) + j;
+			sprites[index] = sf::Sprite(brickTexture);
+			sprites[index].setPosition(sf::Vector2f(i*brickSize.x, 80.f + j*brickSize.y));
+			sprites[index].setScale(0.15f, 0.13f);
+		}
+	}
+
+	return sprites;
 }
 
 void takeInput(const sf::RenderWindow& window)
@@ -113,37 +134,27 @@ sf::Text displayLives(const sf::Font& font) {
 	return lives;
 }
 
-
 int main()
 {
 	static sf::Font inGameFont;
 	if (!inGameFont.loadFromFile("content/font_ingame.ttf"))
 	{
 		// error...
-	}	
+	}
 
 	sf::Text startMsg = inGameMsg("START GAME\nWITH CLICK!", inGameFont);
-	
+
 	ResetGame();
 
 	sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "###ARCANOID###");
-	
+
 	sf::Texture brickTexture;
 	if (!brickTexture.loadFromFile("content/brick_blue.png"))
 	{
 		std::cout << "Error: unable to load texture";
 	}
 
-	const int count = 5;
-	sf::Sprite sprites[count];
-	
-	for(int i = 0; i < count; ++i)
-	{
-		sprites[i] = sf::Sprite(brickTexture);
-		sprites[i].setPosition(sf::Vector2f(80.f + i * 150.f, 80.f));
-		sprites[i].setScale(0.2f, 0.2f);
-	}
-	
+	sf::Sprite* level = buildLevel(brickTexture);
 
 	pad = sf::RectangleShape(padSize);
 	pad.setFillColor(sf::Color::Green);
@@ -190,10 +201,13 @@ int main()
 		window.clear(clearClr);			
 		window.draw(ball);
 
-		for (int i = 0; i < count; ++i)
-		{
-			window.draw(sprites[i]);
+		for (int i = 0; i < LEVEL_HEIGHT; ++i) {
+			for (int j = 0; j < LEVEL_WIDTH; ++j) {
+				window.draw(level[i*LEVEL_WIDTH + j]);
+
+			}
 		}
+
 
 		window.draw(pad);
 		window.draw(displayLives(inGameFont));
