@@ -30,7 +30,7 @@ public:
 	sf::Vector2f m_position;
 	sf::CircleShape m_shape;
 	sf::Vector2f m_direction;
-	int m_cooldown = 5;
+	int m_cooldown = 10;
 
 
 private:
