@@ -1,86 +1,166 @@
 #include "stdio.h"
 #include <iostream>
-
+#include <array>
 
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio/Music.hpp>
+
 
 const float WINDOW_WIDTH = 1024.;
 const float WINDOW_HEIGHT = 768.;
 const float PADDING = 15.;
 
+const int LEVEL_WIDTH = 11;
+const int LEVEL_HEIGHT = 5;
+
 enum class GameState { beforeStart, gameRunning, gameLost, gameWon };
 GameState gameState;
 
-int mousePosX;
 
-int playerLives;
-int points;
+struct playerStats {
+	int lives;
+	int points;
+};
 
-sf::Vector2f padPos;
-float padSpeed = 0.1f;
-const sf::Vector2f padSize = sf::Vector2f(120.f, 10.f);
-const sf::Vector2f padHalfSize = padSize * 0.5f;
+playerStats stats{ 3, 0 };
 
-
-sf::Vector2f ballPosition;
-sf::Vector2f ballDirection;
-float ballSize;
-
-sf::RectangleShape pad;
-sf::CircleShape ball;
-
-const int LEVEL_WIDTH = 11;
-const int LEVEL_HEIGHT = 5;
-sf::Sprite* level;
-sf::Vector2f brickSize = sf::Vector2f((WINDOW_WIDTH / LEVEL_WIDTH), 30.f);
-sf::Texture brickTexture;
+class Ball {
+public:
+	float m_size;
+	sf::Vector2f m_position;
+	sf::CircleShape m_shape;
+	sf::Vector2f m_direction;
+	int m_cooldown = 5;
 
 
-sf::Sprite* buildLevel(const sf::Texture& brickTexture) {
+private:
+	float m_offset;
 
-	sf::Sprite* sprites = new sf::Sprite[LEVEL_HEIGHT*LEVEL_WIDTH];
-	sf::Vector2f brickSize = sf::Vector2f((WINDOW_WIDTH / LEVEL_WIDTH), 30.f);
+public:
 
-	for (int i = 0; i < LEVEL_WIDTH; ++i) {
-		for (int j = 0; j < LEVEL_HEIGHT; ++j)
-		{
-			int index = (i*LEVEL_HEIGHT) + j;
-			sprites[index] = sf::Sprite(brickTexture);
-			sprites[index].setPosition(sf::Vector2f(i*brickSize.x, 80.f + j*brickSize.y));
-			sprites[index].setScale(0.15f, 0.13f);
-		}
+	void init(const float& WINDOW_WIDTH, const float& WINDOW_HEIGHT) {
+		m_size = 10.f;
+		m_shape = sf::CircleShape(m_size);
+		m_position = sf::Vector2f(WINDOW_WIDTH * .5, WINDOW_WIDTH * .5);
+		m_shape.setPosition(m_position);
+		m_shape.setFillColor(sf::Color::Magenta);
+		m_direction = sf::Vector2f(.05f, .05f);
 	}
 
-	return sprites;
-}
+	void setOffset() {
+		m_offset = rand() % 5 * .005f;
+	}
+
+	void accelerateDirection() {
+		setOffset();
+		if (m_direction.x < 0) {
+			m_direction.x -= m_offset;
+		}
+		else {
+			m_direction.x += m_offset;
+		}		
+		if (m_direction.y < 0) {
+			m_direction.y -= m_offset;
+		}
+		else {
+			m_direction.y += m_offset;
+		}
+		m_direction *= 1.001f;
+	}
+
+};
+
+
+
+class Paddle {
+public:
+	sf::RectangleShape m_shape;
+	sf::Vector2f m_size;
+	sf::Vector2f m_position;
+
+	void init(float WINDOW_WIDTH, float WINDOW_HEIGHT) {
+		m_size = sf::Vector2f(120.f, 10.f);
+		m_shape = sf::RectangleShape(m_size);
+		m_shape.setFillColor(sf::Color::Green);
+		m_position = sf::Vector2f((WINDOW_WIDTH + m_size.x) * .5, WINDOW_HEIGHT * .9);
+	}
+
+	void move(int mouseX) {
+		m_position.x = float(mouseX) - m_size.x * .5;
+
+		m_shape.setPosition(m_position);
+	}
+};
+
+
+
+class Brick {
+public:
+	sf::Vector2f m_size;
+	sf::RectangleShape m_shape;
+	sf::Vector2f m_position;
+	bool m_visible;
+	bool m_destroyable;
+	int m_hp;
+
+	void init(const float& WINDOW_WIDTH, const float& WINDOW_HEIGHT) {
+		m_size = sf::Vector2f(WINDOW_WIDTH / LEVEL_WIDTH - 20.f, WINDOW_HEIGHT * .03f);
+		m_shape = sf::RectangleShape(m_size);
+		m_hp = rand() % 3 + 1;
+		if (m_hp == 3) {
+			m_shape.setFillColor(sf::Color::Blue);
+			m_shape.setOutlineColor(sf::Color::Cyan);
+		}
+		else if (m_hp == 2) {
+			m_shape.setFillColor(sf::Color::White);
+			m_shape.setOutlineColor(sf::Color::Yellow);
+		}
+		else {
+			m_shape.setFillColor(sf::Color::Yellow);
+			m_shape.setOutlineColor(sf::Color::Green);
+		}
+		m_shape.setOutlineThickness(5.f);
+		m_visible = true;
+		m_destroyable = true;
+	}
+
+	void destroy() {
+		m_visible = false;
+	}
+};
+
+
+
+Paddle pad = Paddle();
+Ball ball = Ball();
+
+Brick level[LEVEL_WIDTH * LEVEL_HEIGHT];
+
 
 void ResetGame()
 {
-	ballPosition = sf::Vector2f(WINDOW_WIDTH*.5f, 500.f);
-	ball.setPosition(ballPosition);
-	padPos = sf::Vector2f(WINDOW_WIDTH*.5f - padHalfSize.x, WINDOW_HEIGHT - padSize.y - PADDING);
-	pad.setPosition(padPos);
-	ballDirection = sf::Vector2f(0.05f, 0.08f);
-	ballSize = 10.f;
+	ball.init(WINDOW_WIDTH, WINDOW_HEIGHT);
+	pad.init(WINDOW_WIDTH, WINDOW_HEIGHT);
 	if (gameState != GameState::gameRunning) {
-		playerLives = 3;
-		points = 0;
-	}
+		stats.lives = 3;
+		stats.points = 0;
+		for (int i = 0; i < LEVEL_HEIGHT * LEVEL_WIDTH; ++i) {
+			level[i].m_visible = true;
+		}
+	}	
 	gameState = GameState::beforeStart;
+
 }
+
 
 void takeInput(const sf::RenderWindow& window)
 {
-	mousePosX = sf::Mouse::getPosition(window).x;
+	int mouseX = sf::Mouse::getPosition(window).x;
 
-	if (mousePosX > PADDING + padHalfSize.x && mousePosX < (WINDOW_WIDTH - padHalfSize.x - PADDING)) {
-		padPos.x = mousePosX - padHalfSize.x;
-		
+	if (mouseX > PADDING + pad.m_size.x*.5f && mouseX < (WINDOW_WIDTH - pad.m_size.x * .5f - PADDING)) {
+		pad.move(mouseX);
 	}
-
-	pad.setPosition(padPos);
-
+	
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))
 	{
 		ResetGame();
@@ -102,19 +182,34 @@ sf::Text inGameMsg(std::string msg, const sf::Font& font) {
 	return inGameMsg;
 }
 
-inline sf::Vector2f accelerate(sf::Vector2f& direction) {
-	return direction * 1.05f;
-}
 
-bool collisionDetected(sf::Sprite& brick) {
-	if (brick.getColor() == sf::Color(0, 0, 0, 0)) {
+bool collisionDetected(Brick& brick) {
+	if (!brick.m_visible) {
 		return false;
 	}
-	if (ballPosition.x >= brick.getPosition().x && ballPosition.x + ballSize <= brick.getPosition().x + brickSize.x) {
-		if (ballPosition.y + ballSize >= brick.getPosition().y && ballPosition.y <= brick.getPosition().y + brickSize.y) {
-			brick.setColor(sf::Color(0, 0, 0, 0));
-			ballDirection.y = -ballDirection.y;
-			ballDirection = accelerate(ballDirection);
+	ball.m_cooldown--;
+	if (ball.m_position.x + ball.m_size*2 >= brick.m_position.x && ball.m_position.x <= brick.m_position.x + brick.m_size.x) {
+
+		if (ball.m_position.y + ball.m_size*2 >= brick.m_position.y && ball.m_position.y <= brick.m_position.y + brick.m_size.y) {
+			if (brick.m_destroyable) {
+				brick.m_hp -= 1;
+				if (brick.m_hp == 2) {
+					brick.m_shape.setFillColor(sf::Color::White);
+					brick.m_shape.setOutlineColor(sf::Color::Yellow);
+				}
+				else if (brick.m_hp == 1 ){
+					brick.m_shape.setFillColor(sf::Color::Yellow);
+					brick.m_shape.setOutlineColor(sf::Color::Green);
+				}
+				else {
+					brick.destroy();
+				}
+			}
+			ball.m_direction.y = -ball.m_direction.y;
+			if (ball.m_cooldown <= 0) {
+				ball.accelerateDirection();
+				ball.m_cooldown = 5;
+			}
 			return true;
 		}
 		return false;
@@ -122,31 +217,45 @@ bool collisionDetected(sf::Sprite& brick) {
 	return false;
 }
 
-void moveBall(sf::Sprite bricks[]) {
-	
-	if (ballPosition.y + ballSize >= (padPos.y - ballSize))
-	{
-		if ((ballPosition.x <= (padPos.x + padSize.x)) && (ballPosition.x >= (padPos.x)))
-		{
-			ballDirection.y = -ballDirection.y;
-			ballDirection = accelerate(ballDirection);
-		}
-	}
-	if (ballPosition.y <= 0) {
-		ballDirection.y = -ballDirection.y;
-		ballDirection = accelerate(ballDirection);
-	}
-	if (ballPosition.x <= 0 || ballPosition.x >= WINDOW_WIDTH - ballSize) {
-		ballDirection.x = -ballDirection.x;
-		ballDirection = accelerate(ballDirection);
-	}
-	ballPosition += ballDirection;
-	ball.setPosition(ballPosition);
 
-	for (int i = 0; i < LEVEL_HEIGHT * LEVEL_WIDTH; ++i) {
-		if (collisionDetected(bricks[i])) {
-			points += 50;
+void moveBall(Brick level[]) {
+		if (ball.m_position.y + ball.m_size >= pad.m_position.y - ball.m_size)
+		{
+			if ((ball.m_position.x <= (pad.m_position.x + pad.m_size.x)) && (ball.m_position.x + ball.m_size*2 >= (pad.m_position.x)))
+			{
+				ball.m_direction.y = -ball.m_direction.y;
+				if (ball.m_cooldown <= 0) {
+					ball.accelerateDirection();
+					ball.m_cooldown = 10;
+				}
+				ball.m_shape.setRadius(ball.m_shape.getRadius() * .95f);
+				ball.m_size *= .95f;
+			}
 		}
+		if (ball.m_position.y <= 0) {
+			ball.m_direction.y = -ball.m_direction.y;
+			if (ball.m_cooldown <= 0) {
+				ball.accelerateDirection();
+				ball.m_cooldown = 10;
+			}
+		}
+		if (ball.m_position.x <= 0 || ball.m_position.x >= WINDOW_WIDTH - ball.m_size) {
+			ball.m_direction.x = -ball.m_direction.x;
+			if (ball.m_cooldown <= 0) {
+				ball.accelerateDirection();
+				ball.m_cooldown = 10;
+			}
+		}
+
+		for (int i = 0; i < LEVEL_HEIGHT * LEVEL_WIDTH; ++i) {
+			if (collisionDetected(level[i])) {
+				stats.points += 50;
+			}
+		}
+	ball.m_position += ball.m_direction;
+	ball.m_shape.setPosition(ball.m_position);
+	if (ball.m_cooldown > 0) {
+		ball.m_cooldown--;
 	}
 }
 
@@ -155,9 +264,9 @@ sf::Text displayLives(const sf::Font& font) {
 	sf::Text lives;
 
 	std::string msg = "LIVES: ";
-	msg += std::to_string(playerLives);
+	msg += std::to_string(stats.lives);
 	msg += "\nPOINTS: ";
-	msg += std::to_string(points);
+	msg += std::to_string(stats.points);
 	lives.setFont(font); // font is a sf::Font
 	lives.setString(msg.c_str());
 	lives.setCharacterSize(20); // in pixels, not points!
@@ -178,7 +287,21 @@ int main()
 	{
 		std::cout << "Error: unable to load texture";
 	}
-	level = buildLevel(brickTexture);
+
+	for (int i = 0; i < LEVEL_WIDTH; ++i) {
+		for (int j = 0; j < LEVEL_HEIGHT; ++j)
+		{
+			int index = (i * LEVEL_HEIGHT) + j;
+			Brick brick = Brick();
+			brick.init(WINDOW_WIDTH, WINDOW_HEIGHT);
+			level[index] = brick;
+			level[index].m_shape.setPosition(sf::Vector2f(i * (brick.m_size.x + 20.f) + PADDING, 80.f + j * (brick.m_size.y + 20.f)));
+			level[index].m_position = sf::Vector2f(i * (brick.m_size.x + 20.f) + PADDING, 80.f + j * (brick.m_size.y + 20.f));
+		}
+	}
+	level[18].m_destroyable = true;
+	level[49].m_destroyable = true;
+	level[4].m_destroyable = true;
 	
 		
 	static sf::Font inGameFont;
@@ -195,18 +318,9 @@ int main()
 	music.play();
 
 
-	sf::Color clearClr = sf::Color(0, 0, 0, 255);
-
-
 	ResetGame();
 
-	pad = sf::RectangleShape(padSize);
-	pad.setFillColor(sf::Color::Green);
-	pad.setPosition(padPos);
 
-	ball = sf::CircleShape(ballSize);
-	ball.setFillColor(sf::Color::Magenta);
-	ball.setPosition(ballPosition);
 
 
 	while (window.isOpen())
@@ -229,29 +343,33 @@ int main()
 
 		if (gameState == GameState::gameRunning) {
 			moveBall(level); 
-			if (ballPosition.y >= WINDOW_HEIGHT) {
-				playerLives--;
+			if (ball.m_position.y >= WINDOW_HEIGHT) {
+				stats.lives--;
 				ResetGame();
-				if (playerLives <= 0) {
+				if (stats.lives <= 0) {
 					gameState = GameState::gameLost;
 				}
 			}
 		}
 
 		// --- Render ---
-		
+
+		sf::Color clearClr = sf::Color(0, 0, 0, 255);
+
+
 		window.clear(clearClr);			
-		window.draw(ball);
+		window.draw(ball.m_shape);
 
 		for (int i = 0; i < LEVEL_HEIGHT; ++i) {
 			for (int j = 0; j < LEVEL_WIDTH; ++j) {
-				window.draw(level[i*LEVEL_WIDTH + j]);
-
+				if (level[i * LEVEL_WIDTH + j].m_visible) {
+					window.draw(level[i*LEVEL_WIDTH + j].m_shape);
+				}
 			}
 		}
 
 
-		window.draw(pad);
+		window.draw(pad.m_shape);
 		window.draw(displayLives(inGameFont));
 
 		if (gameState == GameState::beforeStart) {

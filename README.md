@@ -19,15 +19,15 @@ TODO:
 - [ ] Ball movement
     - [x] Collisions with walls
     - [x] Add horizontal velocity
-    - [ ] Small randomness in direction on hit
+    - [x] Small randomness in direction on hit
     - [x] Collisions with bricks
     - [x] Increase speed on hit
     - [ ] Non linear collision with pad
-- [ ] Bricks
+- [x] Bricks
     - [x] Hardcoded level with fixed amount of bricks
     - [x] Destroy on hit
-    - [ ] Non destroyable brick
-    - [ ] Brick with hp (more then 1 hit is required to destroy)
+    - [x] Non destroyable brick
+    - [x] Brick with hp (more then 1 hit is required to destroy, change in color)
 - [ ] Core
     - [ ] Destroy ball if it falls down 
     - [x] Display player live
@@ -39,5 +39,5 @@ TODO:
     - [ ] Sounds
     - [ ] Explosive brick
     - [ ] Brick can drop bonus. Additional life, player can collect up to X
-    - [ ] Ball shouldn’t overlap with any other sprites
-    - [ ] Ball should shrink on bounce with pad
+    - [x] Ball shouldn’t overlap with any other sprites
+    - [x] Ball should shrink on bounce with pad
