@@ -4,6 +4,8 @@
 
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio/Music.hpp>
+#include <SFML/Audio/Sound.hpp>
+#include <SFML/Audio/SoundBuffer.hpp>
 
 
 const float WINDOW_WIDTH = 1024.;
@@ -82,11 +84,11 @@ public:
 		m_size = sf::Vector2f(120.f, 10.f);
 		m_shape = sf::RectangleShape(m_size);
 		m_shape.setFillColor(sf::Color::Green);
-		m_position = sf::Vector2f((WINDOW_WIDTH + m_size.x) * .5, WINDOW_HEIGHT * .9);
+		m_position = sf::Vector2f((WINDOW_WIDTH + m_size.x) * .5f, WINDOW_HEIGHT * .9f);
 	}
 
 	void move(int mouseX) {
-		m_position.x = float(mouseX) - m_size.x * .5;
+		m_position.x = float(mouseX) - m_size.x * .5f;
 
 		m_shape.setPosition(m_position);
 	}
@@ -135,6 +137,8 @@ Paddle pad = Paddle();
 Ball ball = Ball();
 
 Brick level[LEVEL_WIDTH * LEVEL_HEIGHT];
+
+sf::Sound brick_hit, brick_destroyed, pad_hit;
 
 
 void ResetGame()
@@ -196,13 +200,16 @@ bool collisionDetected(Brick& brick) {
 				if (brick.m_hp == 2) {
 					brick.m_shape.setFillColor(sf::Color::White);
 					brick.m_shape.setOutlineColor(sf::Color::Yellow);
+					brick_hit.play();
 				}
 				else if (brick.m_hp == 1 ){
 					brick.m_shape.setFillColor(sf::Color::Yellow);
 					brick.m_shape.setOutlineColor(sf::Color::Green);
+					brick_hit.play();
 				}
 				else {
 					brick.destroy();
+					brick_destroyed.play();
 				}
 			}
 			ball.m_direction.y = -ball.m_direction.y;
@@ -230,6 +237,7 @@ void moveBall(Brick level[]) {
 				}
 				ball.m_shape.setRadius(ball.m_shape.getRadius() * .95f);
 				ball.m_size *= .95f;
+				brick_hit.play();
 			}
 		}
 		if (ball.m_position.y <= 0) {
@@ -312,10 +320,33 @@ int main()
 	sf::Text startMsg = inGameMsg("START GAME\nWITH CLICK!", inGameFont);
 
 
+	// ----- Music & Sound -----
+
 	sf::Music music;
+	
 	if (!music.openFromFile("content/music.wav"))
 		return -1; // error
+	
 	music.play();
+
+
+	sf::SoundBuffer brick_hit_b;
+	if (!brick_hit_b.loadFromFile("content/brick_hit.wav")) {
+		return -1;
+	}
+	brick_hit.setBuffer(brick_hit_b);
+	
+	sf::SoundBuffer brick_destroyed_b;
+	if (!brick_destroyed_b.loadFromFile("content/brick_destroyed.wav")) {
+		return -1;
+	}
+	brick_destroyed.setBuffer(brick_destroyed_b);
+
+	sf::SoundBuffer pad_hit_b;
+	if (!pad_hit_b.loadFromFile("content/pad_hit.wav")) {
+		return -1;
+	}
+	pad_hit.setBuffer(pad_hit_b);
 
 
 	ResetGame();
