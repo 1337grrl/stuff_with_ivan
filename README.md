@@ -36,7 +36,7 @@ TODO:
     - [ ] All bricks destroyed - win
 	- [x] Display Game Over message
 - [ ] Extra
-    - [ ] Sounds
+    - [x] Sounds
     - [ ] Explosive brick
     - [ ] Brick can drop bonus. Additional life, player can collect up to X
     - [x] Ball shouldn’t overlap with any other sprites

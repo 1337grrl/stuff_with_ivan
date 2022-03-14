@@ -148,9 +148,20 @@ void ResetGame()
 	if (gameState != GameState::gameRunning) {
 		stats.lives = 3;
 		stats.points = 0;
-		for (int i = 0; i < LEVEL_HEIGHT * LEVEL_WIDTH; ++i) {
-			level[i].m_visible = true;
+		for (int i = 0; i < LEVEL_WIDTH; ++i) {
+			for (int j = 0; j < LEVEL_HEIGHT; ++j)
+			{
+				int index = (i * LEVEL_HEIGHT) + j;
+				Brick brick = Brick();
+				brick.init(WINDOW_WIDTH, WINDOW_HEIGHT);
+				level[index] = brick;
+				level[index].m_shape.setPosition(sf::Vector2f(i * (brick.m_size.x + 20.f) + PADDING, 80.f + j * (brick.m_size.y + 20.f)));
+				level[index].m_position = sf::Vector2f(i * (brick.m_size.x + 20.f) + PADDING, 80.f + j * (brick.m_size.y + 20.f));
+			}
 		}
+		level[18].m_destroyable = true;
+		level[49].m_destroyable = true;
+		level[4].m_destroyable = true;
 	}	
 	gameState = GameState::beforeStart;
 
