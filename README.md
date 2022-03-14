@@ -28,8 +28,8 @@ TODO:
     - [x] Destroy on hit
     - [x] Non destroyable brick
     - [x] Brick with hp (more then 1 hit is required to destroy, change in color)
-- [ ] Core
-    - [ ] Destroy ball if it falls down 
+- [x] Core
+    - [x] Destroy ball if it falls down 
     - [x] Display player live
     - [x] Display score
     - [x] 3 attempts - game over

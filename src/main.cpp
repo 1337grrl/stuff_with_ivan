@@ -73,6 +73,13 @@ public:
 		m_direction *= 1.001f;
 	}
 
+	void destroy() {
+		m_size = 0;
+		delete &m_shape;
+		delete &m_position;
+		delete &m_direction;
+	}
+
 };
 
 
@@ -88,6 +95,7 @@ public:
 		m_shape = sf::RectangleShape(m_size);
 		m_shape.setFillColor(sf::Color::Green);
 		m_position = sf::Vector2f((WINDOW_WIDTH + m_size.x) * .5f, WINDOW_HEIGHT * .9f);
+		m_shape.setPosition(m_position);
 	}
 
 	void move(int mouseX) {
@@ -193,29 +201,38 @@ void ResetGame()
 
 void takeInput(const sf::RenderWindow& window)
 {
-	int mouseX = sf::Mouse::getPosition(window).x;
-
-	if (mouseX > pad.m_size.x*.5f && mouseX < (WINDOW_WIDTH - pad.m_size.x * .5f)) {
-		pad.move(mouseX);
+	if (gameState == GameState::beforeStart) {
+		if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) {
+			ball.init(WINDOW_WIDTH, WINDOW_HEIGHT);
+			gameState = GameState::gameRunning;
+		}
 	}
+	else if (gameState == GameState::gameRunning) {
+		int mouseX = sf::Mouse::getPosition(window).x;
+
+		if (mouseX > pad.m_size.x*.5f && mouseX < (WINDOW_WIDTH - pad.m_size.x * .5f)) {
+			pad.move(mouseX);
+		}
 	
-	if (lootFalling) {
-		if (powerUp.getPosition().x + powerUp.getTexture()->getSize().x*.2f >= pad.m_position.x && powerUp.getPosition().x <= pad.m_position.x + pad.m_size.x) {
-			if (powerUp.getPosition().y + powerUp.getTexture()->getSize().y*.2f >= pad.m_position.y && powerUp.getPosition().y + powerUp.getTexture()->getSize().y*.2f <= pad.m_position.y + pad.m_size.y) {
-				if (stats.lives < 5)
-					stats.lives++;
+		if (lootFalling) {
+			if (powerUp.getPosition().x + powerUp.getTexture()->getSize().x*.2f >= pad.m_position.x && powerUp.getPosition().x <= pad.m_position.x + pad.m_size.x) {
+				if (powerUp.getPosition().y + powerUp.getTexture()->getSize().y*.2f >= pad.m_position.y && powerUp.getPosition().y + powerUp.getTexture()->getSize().y*.2f <= pad.m_position.y + pad.m_size.y) {
+					if (stats.lives < 5)
+						stats.lives++;
+					lootFalling = false;
+				}
+			}
+			if (powerUp.getPosition().y >= WINDOW_HEIGHT) {
 				lootFalling = false;
 			}
 		}
-		if (powerUp.getPosition().y >= WINDOW_HEIGHT) {
-			lootFalling = false;
+
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))
+		{
+			ResetGame();
 		}
 	}
 
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))
-	{
-		ResetGame();
-	}
 }
 
 
@@ -308,6 +325,9 @@ void moveBall(Brick level[]) {
 			ball.m_size *= .98f;
 			brick_hit.play();
 		}
+	}
+	if (ball.m_position.y >= WINDOW_HEIGHT) {
+		ball.destroy();
 	}
 	if (ball.m_position.y <= 0) {
 		ball.m_direction.y = -ball.m_direction.y;
@@ -437,11 +457,6 @@ int main()
 		}
 
 		// --- Update ---
-		if (gameState == GameState::beforeStart) {
-			if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) {
-				gameState = GameState::gameRunning;
-			}
-		}			
 		
 		takeInput(window);
 
