@@ -35,7 +35,7 @@ TODO:
     - [x] 3 attempts - game over
     - [x] All bricks destroyed - win
 	- [x] Display Game Over message
-- [ ] Extra
+- [x] Extra
     - [x] Sounds
     - [x] Explosive brick
     - [x] Brick can drop bonus. Additional life, player can collect up to X

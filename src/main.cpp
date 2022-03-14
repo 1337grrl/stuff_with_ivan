@@ -285,9 +285,12 @@ void explode(const Brick& brick) {
 }
 
 
-bool collisionDetected(Brick& brick) {
+bool collideWithBrick(Brick& brick) {
 
-	if (ball.m_position.x + ball.m_size * 2 >= brick.m_position.x && ball.m_position.x <= brick.m_position.x + brick.m_size.x && ball.m_position.y + ball.m_size * 2 >= brick.m_position.y && ball.m_position.y <= brick.m_position.y + brick.m_size.y)
+	if (ball.m_position.x + ball.m_size * 2 >= brick.m_position.x && 
+		ball.m_position.x <= brick.m_position.x + brick.m_size.x && 
+		ball.m_position.y + ball.m_size * 2 >= brick.m_position.y && 
+		ball.m_position.y <= brick.m_position.y + brick.m_size.y)
 	{
 		if (!brick.m_visible) {
 			return false;
@@ -300,7 +303,28 @@ bool collisionDetected(Brick& brick) {
 		}
 		brick_hit.play();
 		brick.update();
-		ball.m_direction.y = -ball.m_direction.y;
+
+		if (((ball.m_position.x - brick.m_position.x) / brick.m_size.x <= (ball.m_position.y - brick.m_position.y) / brick.m_size.y) && 
+			((ball.m_position.x - brick.m_position.x) / brick.m_size.x <= (brick.m_size.y - (ball.m_position.y - brick.m_position.y) / brick.m_size.y))) 
+		{
+			ball.m_position.y += 5.f;
+			ball.m_direction.y = -ball.m_direction.y;
+		} else if (((ball.m_position.x - brick.m_position.x) / brick.m_size.x >= (ball.m_position.y - brick.m_position.y) / brick.m_size.y) && 
+			((ball.m_position.x - brick.m_position.x) / brick.m_size.x >= (brick.m_size.y - (ball.m_position.y - brick.m_position.y) / brick.m_size.y)))
+		{
+			ball.m_position.y -= 5.f;
+			ball.m_direction.y = -ball.m_direction.y;
+		}
+		else if (((ball.m_position.x - brick.m_position.x) / brick.m_size.x <= (ball.m_position.y - brick.m_position.y) / brick.m_size.y) && 
+			((ball.m_position.x - brick.m_position.x) / brick.m_size.x >= (brick.m_size.y - (ball.m_position.y - brick.m_position.y) / brick.m_size.y))) {
+			ball.m_position.x -= 5.f;
+			ball.m_direction.x = -ball.m_direction.x;
+		}
+		else {
+			ball.m_position.x += 5.f;
+			ball.m_direction.x = -ball.m_direction.x;
+		}
+
 		if (ball.m_cooldown <= 0) {
 			ball.accelerateDirection();
 			ball.m_cooldown = 10;
@@ -310,23 +334,31 @@ bool collisionDetected(Brick& brick) {
 	return false;
 }
 
+void collideWithPad() {
+	ball.m_direction.y = -ball.m_direction.y;
+	ball.m_position.y -= 3.f;
+	if (ball.m_cooldown <= 0) {
+		ball.accelerateDirection();
+		ball.m_cooldown = 10;
+	}
+	ball.m_shape.setRadius(ball.m_shape.getRadius() * .98f);
+	ball.m_size *= .98f;
+	brick_hit.play();
+}
+
 
 void moveBall(Brick level[]) {
 	if (ball.m_cooldown > 0) {
 		ball.m_cooldown--;
 	}
-	if (ball.m_position.y + ball.m_size*2 >= pad.m_position.y && ball.m_position.y <= pad.m_position.y && (ball.m_position.x <= (pad.m_position.x + pad.m_size.x)) && (ball.m_position.x + ball.m_size * 2 >= (pad.m_position.x)))
+	if (ball.m_position.y + ball.m_size * 2 >= pad.m_position.y &&
+		ball.m_position.y <= pad.m_position.y &&
+		(ball.m_position.x <= (pad.m_position.x + pad.m_size.x)) &&
+		(ball.m_position.x + ball.m_size * 2 >= (pad.m_position.x)))
 	{
-		if (true)
-		{
-			ball.m_direction.y = -ball.m_direction.y;
-			if (ball.m_cooldown <= 0) {
-				ball.accelerateDirection();
-				ball.m_cooldown = 10;
-			}
-			ball.m_shape.setRadius(ball.m_shape.getRadius() * .98f);
-			ball.m_size *= .98f;
-			brick_hit.play();
+		if (((ball.m_position.x - pad.m_position.x) / pad.m_size.x >= (ball.m_position.y - pad.m_position.y) / pad.m_size.y) &&
+			((ball.m_position.x - pad.m_position.x) / pad.m_size.x <= (pad.m_size.y - (ball.m_position.y - pad.m_position.y) / pad.m_size.y))) {
+		collideWithPad();
 		}
 	}
 	if (ball.m_position.y >= WINDOW_HEIGHT) {
@@ -348,7 +380,7 @@ void moveBall(Brick level[]) {
 	}
 
 	for (int i = 0; i < LEVEL_HEIGHT * LEVEL_WIDTH; ++i) {
-		if (collisionDetected(level[i])) {
+		if (collideWithBrick(level[i])) {
 			stats.points += 50;
 		}
 	}
