@@ -17,14 +17,17 @@ const int LEVEL_HEIGHT = 5;
 
 enum class GameState { beforeStart, gameRunning, gameLost, gameWon };
 GameState gameState;
-
+bool lootFalling = false;
+int frameExplosionWillLast = 0;
+int destroyableBricksInLevel = 0;
 
 struct playerStats {
 	int lives;
 	int points;
+	int bricks_destroyed;
 };
 
-playerStats stats{ 3, 0 };
+playerStats stats{ 3, 0, 0 };
 
 class Ball {
 public:
@@ -32,7 +35,7 @@ public:
 	sf::Vector2f m_position;
 	sf::CircleShape m_shape;
 	sf::Vector2f m_direction;
-	int m_cooldown = 10;
+	int m_cooldown = 20;
 
 
 private:
@@ -46,11 +49,11 @@ public:
 		m_position = sf::Vector2f(WINDOW_WIDTH * .5, WINDOW_WIDTH * .5);
 		m_shape.setPosition(m_position);
 		m_shape.setFillColor(sf::Color::Magenta);
-		m_direction = sf::Vector2f(.05f, .05f);
+		m_direction = sf::Vector2f(3.f, 3.f);
 	}
 
 	void setOffset() {
-		m_offset = rand() % 5 * .005f;
+		m_offset = rand() % 10* .01f;
 	}
 
 	void accelerateDirection() {
@@ -95,7 +98,6 @@ public:
 };
 
 
-
 class Brick {
 public:
 	sf::Vector2f m_size;
@@ -103,12 +105,28 @@ public:
 	sf::Vector2f m_position;
 	bool m_visible;
 	bool m_destroyable;
+	int m_explosive;
 	int m_hp;
 
 	void init(const float& WINDOW_WIDTH, const float& WINDOW_HEIGHT) {
 		m_size = sf::Vector2f(WINDOW_WIDTH / LEVEL_WIDTH - 20.f, WINDOW_HEIGHT * .03f);
 		m_shape = sf::RectangleShape(m_size);
 		m_hp = rand() % 3 + 1;
+		if (rand() % (LEVEL_HEIGHT * LEVEL_WIDTH) == 1 || rand() % (LEVEL_HEIGHT * LEVEL_WIDTH) == 5) {
+			m_explosive = true;
+		}
+		else {
+			m_explosive = false;
+		}
+
+		if (!m_explosive && ((rand() % (LEVEL_HEIGHT * LEVEL_WIDTH) == 1 || rand() % (LEVEL_HEIGHT * LEVEL_WIDTH) == 5))) {
+			m_destroyable = false;
+		}
+		else {
+			m_destroyable = true;
+			destroyableBricksInLevel++;
+		}
+
 		if (m_hp == 3) {
 			m_shape.setFillColor(sf::Color::Blue);
 			m_shape.setOutlineColor(sf::Color::Cyan);
@@ -121,9 +139,14 @@ public:
 			m_shape.setFillColor(sf::Color::Yellow);
 			m_shape.setOutlineColor(sf::Color::Green);
 		}
+		if (!m_destroyable) {
+			m_shape.setFillColor(sf::Color(128, 0, 255, 255));
+		}
+		if (m_explosive) {
+			m_shape.setFillColor(sf::Color::Red);
+		}
 		m_shape.setOutlineThickness(5.f);
 		m_visible = true;
-		m_destroyable = true;
 	}
 
 	void destroy() {
@@ -132,13 +155,14 @@ public:
 };
 
 
-
 Paddle pad = Paddle();
 Ball ball = Ball();
 
 Brick level[LEVEL_WIDTH * LEVEL_HEIGHT];
 
 sf::Sound brick_hit, brick_destroyed, pad_hit;
+sf::Sprite powerUp;
+sf::Sprite explosion;
 
 
 void ResetGame()
@@ -148,6 +172,8 @@ void ResetGame()
 	if (gameState != GameState::gameRunning) {
 		stats.lives = 3;
 		stats.points = 0;
+		stats.bricks_destroyed = 0;
+		destroyableBricksInLevel = 0;
 		for (int i = 0; i < LEVEL_WIDTH; ++i) {
 			for (int j = 0; j < LEVEL_HEIGHT; ++j)
 			{
@@ -159,9 +185,6 @@ void ResetGame()
 				level[index].m_position = sf::Vector2f(i * (brick.m_size.x + 20.f) + PADDING, 80.f + j * (brick.m_size.y + 20.f));
 			}
 		}
-		level[18].m_destroyable = true;
-		level[49].m_destroyable = true;
-		level[4].m_destroyable = true;
 	}	
 	gameState = GameState::beforeStart;
 
@@ -172,10 +195,23 @@ void takeInput(const sf::RenderWindow& window)
 {
 	int mouseX = sf::Mouse::getPosition(window).x;
 
-	if (mouseX > PADDING + pad.m_size.x*.5f && mouseX < (WINDOW_WIDTH - pad.m_size.x * .5f - PADDING)) {
+	if (mouseX > pad.m_size.x*.5f && mouseX < (WINDOW_WIDTH - pad.m_size.x * .5f)) {
 		pad.move(mouseX);
 	}
 	
+	if (lootFalling) {
+		if (powerUp.getPosition().x + powerUp.getTexture()->getSize().x*.2f >= pad.m_position.x && powerUp.getPosition().x <= pad.m_position.x + pad.m_size.x) {
+			if (powerUp.getPosition().y + powerUp.getTexture()->getSize().y*.2f >= pad.m_position.y && powerUp.getPosition().y + powerUp.getTexture()->getSize().y*.2f <= pad.m_position.y + pad.m_size.y) {
+				if (stats.lives < 5)
+					stats.lives++;
+				lootFalling = false;
+			}
+		}
+		if (powerUp.getPosition().y >= WINDOW_HEIGHT) {
+			lootFalling = false;
+		}
+	}
+
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))
 	{
 		ResetGame();
@@ -197,85 +233,105 @@ sf::Text inGameMsg(std::string msg, const sf::Font& font) {
 	return inGameMsg;
 }
 
+void dropLoot(const Brick& brick) {
+	lootFalling = true;
+	powerUp.setPosition(brick.m_position);
+}
+
 
 bool collisionDetected(Brick& brick) {
 	if (!brick.m_visible) {
 		return false;
 	}
-	ball.m_cooldown--;
-	if (ball.m_position.x + ball.m_size*2 >= brick.m_position.x && ball.m_position.x <= brick.m_position.x + brick.m_size.x) {
+	if (ball.m_position.x + ball.m_size*2 >= brick.m_position.x && ball.m_position.x <= brick.m_position.x + brick.m_size.x && ball.m_position.y + ball.m_size*2 >= brick.m_position.y && ball.m_position.y <= brick.m_position.y + brick.m_size.y) {
 
-		if (ball.m_position.y + ball.m_size*2 >= brick.m_position.y && ball.m_position.y <= brick.m_position.y + brick.m_size.y) {
-			if (brick.m_destroyable) {
-				brick.m_hp -= 1;
-				if (brick.m_hp == 2) {
-					brick.m_shape.setFillColor(sf::Color::White);
-					brick.m_shape.setOutlineColor(sf::Color::Yellow);
-					brick_hit.play();
-				}
-				else if (brick.m_hp == 1 ){
-					brick.m_shape.setFillColor(sf::Color::Yellow);
-					brick.m_shape.setOutlineColor(sf::Color::Green);
-					brick_hit.play();
-				}
-				else {
-					brick.destroy();
-					brick_destroyed.play();
-				}
-			}
-			ball.m_direction.y = -ball.m_direction.y;
-			if (ball.m_cooldown <= 0) {
-				ball.accelerateDirection();
-				ball.m_cooldown = 5;
-			}
-			return true;
+		if (brick.m_destroyable) {
+			brick.m_hp -= 1;
 		}
-		return false;
+		if (brick.m_hp == 2) {
+			brick.m_shape.setFillColor(sf::Color::White);
+			brick.m_shape.setOutlineColor(sf::Color::Yellow);
+			brick_hit.play();
+		}
+		else if (brick.m_hp == 1){
+			brick.m_shape.setFillColor(sf::Color::Yellow);
+			brick.m_shape.setOutlineColor(sf::Color::Green);
+			brick_hit.play();
+		}
+		else if (brick.m_hp == 0) {
+			brick.destroy();
+			if (brick.m_explosive) {
+
+			}
+			brick_destroyed.play();
+			stats.bricks_destroyed++;
+			if (rand() % 10 == 1) {
+				dropLoot(brick);
+			}
+			if (brick.m_explosive) {
+				frameExplosionWillLast = 20;
+				explosion.setPosition((brick.m_position));
+			}
+		}
+		if (!brick.m_destroyable) {
+			brick.m_shape.setFillColor(sf::Color(128, 0, 255, 255));
+		}
+		if (brick.m_explosive) {
+			brick.m_shape.setFillColor(sf::Color::Red);
+		}
+		ball.m_direction.y = -ball.m_direction.y;
+		if (ball.m_cooldown <= 0) {
+			ball.accelerateDirection();
+			ball.m_cooldown = 10;
+		}
+		return true;
+
 	}
 	return false;
 }
 
 
 void moveBall(Brick level[]) {
-		if (ball.m_position.y + ball.m_size >= pad.m_position.y - ball.m_size)
+	if (ball.m_cooldown > 0) {
+		ball.m_cooldown--;
+	}
+	if (ball.m_position.y + ball.m_size*2 >= pad.m_position.y && ball.m_position.y <= pad.m_position.y && (ball.m_position.x <= (pad.m_position.x + pad.m_size.x)) && (ball.m_position.x + ball.m_size * 2 >= (pad.m_position.x)))
+	{
+		if (true)
 		{
-			if ((ball.m_position.x <= (pad.m_position.x + pad.m_size.x)) && (ball.m_position.x + ball.m_size*2 >= (pad.m_position.x)))
-			{
-				ball.m_direction.y = -ball.m_direction.y;
-				if (ball.m_cooldown <= 0) {
-					ball.accelerateDirection();
-					ball.m_cooldown = 10;
-				}
-				ball.m_shape.setRadius(ball.m_shape.getRadius() * .95f);
-				ball.m_size *= .95f;
-				brick_hit.play();
-			}
-		}
-		if (ball.m_position.y <= 0) {
 			ball.m_direction.y = -ball.m_direction.y;
 			if (ball.m_cooldown <= 0) {
 				ball.accelerateDirection();
 				ball.m_cooldown = 10;
 			}
+			ball.m_shape.setRadius(ball.m_shape.getRadius() * .98f);
+			ball.m_size *= .98f;
+			brick_hit.play();
 		}
-		if (ball.m_position.x <= 0 || ball.m_position.x >= WINDOW_WIDTH - ball.m_size) {
-			ball.m_direction.x = -ball.m_direction.x;
-			if (ball.m_cooldown <= 0) {
-				ball.accelerateDirection();
-				ball.m_cooldown = 10;
-			}
+	}
+	if (ball.m_position.y <= 0) {
+		ball.m_direction.y = -ball.m_direction.y;
+		if (ball.m_cooldown <= 0) {
+			ball.accelerateDirection();
+			ball.m_cooldown = 10;
 		}
+	}
+	if (ball.m_position.x <= 0 || ball.m_position.x >= WINDOW_WIDTH - ball.m_size) {
+		ball.m_direction.x = -ball.m_direction.x;
+		if (ball.m_cooldown == 0) {
+			ball.accelerateDirection();
+			ball.m_cooldown = 10;
+		}
+	}
 
-		for (int i = 0; i < LEVEL_HEIGHT * LEVEL_WIDTH; ++i) {
-			if (collisionDetected(level[i])) {
-				stats.points += 50;
-			}
+	for (int i = 0; i < LEVEL_HEIGHT * LEVEL_WIDTH; ++i) {
+		if (collisionDetected(level[i])) {
+			stats.points += 50;
 		}
+	}
 	ball.m_position += ball.m_direction;
 	ball.m_shape.setPosition(ball.m_position);
-	if (ball.m_cooldown > 0) {
-		ball.m_cooldown--;
-	}
+
 }
 
 
@@ -298,14 +354,24 @@ sf::Text displayLives(const sf::Font& font) {
 
 int main()
 {
+	// ----- Graphics -----
 	sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "###ARCANOID###");
+	window.setFramerateLimit(60);
 	window.setMouseCursorVisible(false);
 
-	static sf::Texture brickTexture;
-	if (!brickTexture.loadFromFile("content/brick_blue.png"))
-	{
-		std::cout << "Error: unable to load texture";
+	sf::Texture heart;
+	if (!heart.loadFromFile("content/heart.png")) {
+		return -1;
 	}
+	powerUp = sf::Sprite(heart);
+	powerUp.setScale(sf::Vector2f(.2f, .2f));
+
+	sf::Texture boom;
+	if (!boom.loadFromFile("content/explosion.png")) {
+		return -1;
+	}
+	explosion.setTexture(boom);
+	explosion.setScale(sf::Vector2f(.4f, .4f));
 
 	for (int i = 0; i < LEVEL_WIDTH; ++i) {
 		for (int j = 0; j < LEVEL_HEIGHT; ++j)
@@ -318,9 +384,6 @@ int main()
 			level[index].m_position = sf::Vector2f(i * (brick.m_size.x + 20.f) + PADDING, 80.f + j * (brick.m_size.y + 20.f));
 		}
 	}
-	level[18].m_destroyable = true;
-	level[49].m_destroyable = true;
-	level[4].m_destroyable = true;
 	
 		
 	static sf::Font inGameFont;
@@ -339,6 +402,7 @@ int main()
 		return -1; // error
 	
 	music.play();
+	music.setLoop(true);
 
 
 	sf::SoundBuffer brick_hit_b;
@@ -363,8 +427,6 @@ int main()
 	ResetGame();
 
 
-
-
 	while (window.isOpen())
 	{
 		sf::Event event;
@@ -383,6 +445,7 @@ int main()
 		
 		takeInput(window);
 
+
 		if (gameState == GameState::gameRunning) {
 			moveBall(level); 
 			if (ball.m_position.y >= WINDOW_HEIGHT) {
@@ -394,6 +457,17 @@ int main()
 			}
 		}
 
+		if (lootFalling) {
+			powerUp.setPosition(powerUp.getPosition() + sf::Vector2f(0.f, 6.f));
+		}
+
+		if (stats.bricks_destroyed == destroyableBricksInLevel) {
+			gameState = GameState::gameWon;
+		}
+
+		if (frameExplosionWillLast > 0) {
+			frameExplosionWillLast--;
+		}
 		// --- Render ---
 
 		sf::Color clearClr = sf::Color(0, 0, 0, 255);
@@ -414,12 +488,19 @@ int main()
 		window.draw(pad.m_shape);
 		window.draw(displayLives(inGameFont));
 
+		if (lootFalling) {
+			window.draw(powerUp);
+		}
+
+		if (frameExplosionWillLast > 0) {
+			window.draw(explosion);
+		}
 		if (gameState == GameState::beforeStart) {
 			window.draw(startMsg);
 		} else if (gameState == GameState::gameLost) {
 			window.draw(inGameMsg("GAME OVER!\nReset with Esc", inGameFont));
 		} else if (gameState == GameState::gameWon) {
-			window.draw(inGameMsg("YOU WON!", inGameFont));
+			window.draw(inGameMsg("YOU WON!\nReset with Esc", inGameFont));
 		}
 
 		/* --- Debug ---

@@ -33,11 +33,11 @@ TODO:
     - [x] Display player live
     - [x] Display score
     - [x] 3 attempts - game over
-    - [ ] All bricks destroyed - win
+    - [x] All bricks destroyed - win
 	- [x] Display Game Over message
 - [ ] Extra
     - [x] Sounds
     - [ ] Explosive brick
-    - [ ] Brick can drop bonus. Additional life, player can collect up to X
+    - [x] Brick can drop bonus. Additional life, player can collect up to X
     - [x] Ball shouldn’t overlap with any other sprites
     - [x] Ball should shrink on bounce with pad
