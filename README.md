@@ -37,7 +37,7 @@ TODO:
 	- [x] Display Game Over message
 - [ ] Extra
     - [x] Sounds
-    - [ ] Explosive brick
+    - [x] Explosive brick
     - [x] Brick can drop bonus. Additional life, player can collect up to X
     - [x] Ball shouldn’t overlap with any other sprites
     - [x] Ball should shrink on bounce with pad
